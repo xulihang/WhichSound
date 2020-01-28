@@ -1,0 +1,65 @@
+﻿AppType=StandardJava
+Build1=Default,b4j.example
+File1=languagesWithoutSpace.txt
+FileGroup1=Default Group
+Group=Default Group
+Library1=jcore
+Library2=jrandomaccessfile
+Library3=jsql
+Library4=jstringutils
+Library5=jserver
+Library6=json
+Library7=javaobject
+Library8=encryption
+Library9=jpoi
+Module1=DB
+Module2=LanguageUtils
+Module3=Utils
+Module4=GetMatchList
+Module5=Upload
+Module6=Detail
+NumberOfFiles=1
+NumberOfLibraries=9
+NumberOfModules=6
+Version=7.8
+@EndOfDesignText@
+'Non-UI application (console / server application)
+#Region Project Attributes 
+	#CommandLineArgs:
+	#MergeLibraries: True 
+#End Region
+
+#AdditionalJar: sqlite-jdbc-3.23.1
+#AdditionalJar: bcprov-jdk15on-154
+
+Sub Process_Globals
+	Private srvr As Server
+	Public TempDir As String
+End Sub
+
+Sub AppStart (Args() As String)
+	TempDir = File.Combine(File.DirApp, "temp")
+	If File.Exists(TempDir, "") = False Then
+		File.MakeDir(TempDir, "")
+	End If
+	Dim port As Int
+	Log(Args.Length)
+	If Args.Length>0 Then
+		port=Args(0)
+		Log(port)
+	Else
+		port=51041
+	End If
+	srvr.Initialize("srvr")
+	srvr.AddHandler("/get","GetMatchList",False)
+	srvr.AddHandler("/upload","Upload",False)
+	srvr.AddHandler("/detail","Detail",False)
+	srvr.Port=port
+	srvr.Start
+	StartMessageLoop
+End Sub
+
+'Return true to allow the default exceptions handler to handle the uncaught exception.
+Sub Application_Error (Error As Exception, StackTrace As String) As Boolean
+	Return True
+End Sub
