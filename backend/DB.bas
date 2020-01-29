@@ -98,7 +98,12 @@ Public Sub GetDetail(rowid As Int) As String
 	Return rs.GetString2(0)
 End Sub
 
-Public Sub GetMatchedListAsync(text As String,page As Int) As List
+Public Sub GetColumnByName(rowid As Int,name As String) As String
+	Dim rs As ResultSet = sql1.ExecQuery("SELECT "&name&" FROM idx WHERE rowid = "&rowid)
+	Return rs.GetString2(0)
+End Sub
+
+Public Sub GetMatchedListAsync(text As String,page As Int,categories As Map) As List
 	'Dim maxLength As Int=text.Length*2
 	Dim sqlStr As String
 	Dim operator As String
@@ -121,18 +126,29 @@ Public Sub GetMatchedListAsync(text As String,page As Int) As List
 	Do While rs.NextRow
 		Dim result As Map
 		result.Initialize
-		Dim Hightlight As String
-		Hightlight=getHightlight(Utils.cleanedEntry(rs.GetString2(0)),words)
-		Dim word As String=rs.GetString2(1)
-		result.Put("highlight",Hightlight)
-		result.Put("word",word)
-		result.Put("rowid",rs.GetInt2(2))
-		resultList.Add(result)
+		Dim rowid As Int=rs.GetInt2(2)
+		If matchCategory(rowid,categories) Then
+			Dim Hightlight As String
+			Hightlight=getHightlight(Utils.cleanedEntry(rs.GetString2(0)),words)
+			Dim word As String=rs.GetString2(1)
+			result.Put("highlight",Hightlight)
+			result.Put("word",word)
+			result.Put("rowid",rowid)
+			resultList.Add(result)
+		End If
 	Loop
 	rs.Close
 	Return resultList
 End Sub
 
+Sub matchCategory(rowid As Int,categories As Map) As Boolean
+	For Each key As String In categories.keys
+		If GetColumnByName(rowid,key)<>categories.Get(key) Then
+			Return False
+		End If
+	Next
+	Return True
+End Sub
 
 Sub getHightlight(text As String,words As List) As String
 	If words.Size=1 Then

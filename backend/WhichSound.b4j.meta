@@ -19,5 +19,6 @@ ModuleClosedNodes3=
 ModuleClosedNodes4=
 ModuleClosedNodes5=
 ModuleClosedNodes6=
+NavigationStack=Upload,Handle,52,0,DB,Put,17,0,GetMatchList,stringsTostring,50,6,GetMatchList,Handle,24,6,Detail,Handle,11,0,DB,GetDetail,94,0,DB,GetColumnByName,94,6,DB,GetMatchedListAsync,121,6,DB,matchCategory,145,6
 SelectedBuild=0
 VisibleModules=1,2,3,4,5,6
