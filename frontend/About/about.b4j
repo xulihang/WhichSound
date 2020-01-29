@@ -1,0 +1,104 @@
+﻿AppType=JavaFX
+Build1=Default,b4j.example
+File1=background.jpg
+File10=paginator.bjl
+File11=skeleton-all.min.css
+File12=styles.css
+File2=FontAwesome.otf
+File3=fontawesome-webfont.eot
+File4=fontawesome-webfont.svg
+File5=fontawesome-webfont.ttf
+File6=fontawesome-webfont.woff
+File7=fontawesome-webfont.woff2
+File8=layout1.bjl
+File9=MultiLayout.bjl
+FileGroup1=Default Group
+FileGroup10=Default Group
+FileGroup11=Default Group
+FileGroup12=Default Group
+FileGroup2=Default Group
+FileGroup3=Default Group
+FileGroup4=Default Group
+FileGroup5=Default Group
+FileGroup6=Default Group
+FileGroup7=Default Group
+FileGroup8=Default Group
+FileGroup9=Default Group
+Group=Default Group
+Library1=jcore
+Library2=jfx
+Library3=banano
+Library4=bananoskeleton
+Library5=jshell
+NumberOfFiles=12
+NumberOfLibraries=5
+NumberOfModules=0
+Version=7.8
+@EndOfDesignText@
+#Region Project Attributes 
+	#MainFormWidth: 600
+	#MainFormHeight: 600 
+	#IgnoreWarnings: 16, 10, 14, 15
+#End Region
+
+Sub Process_Globals
+	Private BANano As BANano 'ignore
+	Private SKNavigationBar1 As SKNavigationBar 'ignore
+	Private SKLabel1 As SKLabel
+End Sub
+
+Sub AppStart (Form1 As Form, Args() As String)
+	
+	' you can change some output params here
+	BANano.Initialize("BANano", "About",DateTime.Now)
+	BANano.HTML_NAME = "about.html"
+	BANano.JAVASCRIPT_NAME = "aboutpage" & DateTime.Now & ".js"
+	BANano.SERVICEWORKER_NAME="aboutSW.js"
+	BANano.MANIFEST_NAME="aboutManifest.json"
+	BANano.Header.Title="关于"
+	
+	BANano.ExternalTestConnectionServer = "http://www.baidu.com"
+
+	BANano.Header.AddCSSFile("skeleton-all.min.css")
+	BANano.Header.AddCSSFile("styles.css")
+	' start the build
+	BANano.Build(File.DirApp)
+	Log("copying...")
+	Dim sh As Shell
+	sh.Initialize("","xcopy.exe",Array("/E/Y","E:\B4J\SoundEffects\frontend\About\Objects\About\*","E:\B4J\SoundEffects\Objects\www"))
+	sh.RunSynchronous(5000)
+	Log("done")
+	ExitApplication
+End Sub
+
+'Return true to allow the default exceptions handler to handle the uncaught exception.
+Sub Application_Error (Error As Exception, StackTrace As String) As Boolean
+	Return True
+End Sub
+
+' HERE STARTS YOUR APP
+Sub BANano_Ready()
+	' normal layouts
+	BANano.LoadLayout("#body", "layout1")
+	SKNavigationBar1.AddMenu("about","关于")
+	SKNavigationBar1.AddMenu("upload","上传")
+	SKNavigationBar1.AddMenu("logo", "拟声词检索")
+	Dim sb As StringBuilder
+	sb.Initialize
+	sb.Append("本工具为用户提供拟声词的在线全文检索功能。")
+	sb.Append("<br/>")
+	sb.Append("允许上传xlsx格式的数据，字段名称依次为word、自定义的分类字段（用英文表示）、content、raw，并允许附带CSS。")
+	sb.Append("<br/>")
+	sb.Append($"<a href="/search.html?id=Q0PVHltQEbONXGRbxhEiQA">示例：基于《新牛津英汉双解词典》，仅供学习使用。</a>"$)
+	sb.Append("<br/>@2020 xulihang")
+	SKLabel1.Text=sb.ToString
+End Sub
+
+Sub SKNavigationBar1_Click (event As BANanoEvent, menu As String)
+	Log("Clicked on menu: " & menu)
+	Select menu
+		Case "upload"
+			BANano.Window.Open("/upload.html","","",False)
+	End Select
+	SKNavigationBar1.CloseDrawerMenu
+End Sub
