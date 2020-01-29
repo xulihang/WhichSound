@@ -4,6 +4,6 @@ ModuleBreakpoints0=
 ModuleBreakpoints1=
 ModuleClosedNodes0=
 ModuleClosedNodes1=
-NavigationStack=Main,ResultRow_Click,228,6,Main,SKNavigationBar1_Click,178,0,Main,NextPage_Click,189,0,Main,BANano_Ready,49,6,HTTPRequests,GetResults,6,0,Main,DoSearch,151,0,Main,SearchButton_Click,145,0,Main,Process_Globals,14,0,Main,AppStart,35,6,Main,loadResult,104,6
+NavigationStack=HTTPRequests,GetColumns,40,0,Main,getColumns,69,1,Visual Designer,oneCategory.bjl,-100,6,Main,Process_Globals,17,5,Main,loadCategories,141,6,Main,loadResult,94,6,Main,getCategoryParams,155,6,Main,DoSearch,215,6,Main,R1_Click,220,0,Main,BANano_Ready,57,6
 SelectedBuild=0
 VisibleModules=1

@@ -30,6 +30,27 @@ public Sub GetResults(Url As String) 'ignore
 	promise.end
 End Sub
 
+
+public Sub GetColumns(Url As String) 'ignore
+	' We make a new promise
+	Dim promise As BANanoPromise
+	' Some vars to hold our results
+	Dim json As String
+	Dim error As String
+ 
+	' Call the http request
+	promise.CallSub(Me, "DoHTTPForUrl", Array(Url))
+ 
+	promise.Then(json)
+		' We got it!
+	    result=json
+	    Main.loadCategories(json)
+	promise.Else(error) 'ignore
+		Log(error)	
+	    BANano.Alert(error)
+	promise.end
+End Sub
+
 public Sub DoHTTPForUrl(Url As String) As String 'ignore
 	' Defining a XMLHttpRequest object
 	Dim Request As BANanoObject

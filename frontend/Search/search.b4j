@@ -1,9 +1,10 @@
 ﻿AppType=JavaFX
 Build1=Default,b4j.example
 File1=background.jpg
-File10=paginator.bjl
-File11=skeleton-all.min.css
-File12=styles.css
+File10=oneCategory.bjl
+File11=paginator.bjl
+File12=skeleton-all.min.css
+File13=styles.css
 File2=FontAwesome.otf
 File3=fontawesome-webfont.eot
 File4=fontawesome-webfont.svg
@@ -16,6 +17,7 @@ FileGroup1=Default Group
 FileGroup10=Default Group
 FileGroup11=Default Group
 FileGroup12=Default Group
+FileGroup13=Default Group
 FileGroup2=Default Group
 FileGroup3=Default Group
 FileGroup4=Default Group
@@ -31,7 +33,7 @@ Library3=banano
 Library4=bananoskeleton
 Library5=jshell
 Module1=HTTPRequests
-NumberOfFiles=12
+NumberOfFiles=13
 NumberOfLibraries=5
 NumberOfModules=1
 Version=7.8
@@ -51,8 +53,9 @@ Sub Process_Globals
 	Private currentPageNum As Int=1
 	Private querySize As Int=15
 	Private id As String
-	Private KeysCombo As SKCombo
 	Private ResultRow As SKRow
+	Private CategoryRow As SKRow
+	Private categoryNum As Int
 End Sub
 
 Sub AppStart (Form1 As Form, Args() As String)
@@ -92,14 +95,21 @@ Sub BANano_Ready()
 	' Add some menu items (are added in reverse!)
 	SKNavigationBar1.AddMenu("about","关于")
 	SKNavigationBar1.AddMenu("upload","上传")
-	SKNavigationBar1.AddMenu("logo", "TMSearch")
+	SKNavigationBar1.AddMenu("logo", "拟声词检索")
 	
-	KeysCombo.AddOption("idx","所有")
 	Dim params As Map=BANano.GetURLParams(BANano.GetCurrentUrl)
 	If params.ContainsKey("id") Then
 		id=params.Get("id")
 	End If
 	id=BANano.EncodeURI(id)
+	getColumns
+End Sub
+
+Sub getColumns
+	Dim url As String
+	url=$"/columns?id=${id}"$
+	Log("url:"&url)
+	HTTPRequests.GetColumns(url)
 End Sub
 
 Public Sub loadResult(json As String)
@@ -119,14 +129,14 @@ Public Sub loadResult(json As String)
 	
 	' loading layouts as array (multiple times loading the same layout)
 
-
+	
 	For i=0 To segments.Size - 1
 		Dim result As Map
 		result=segments.Get(i)
 		Log(i)
 		Dim detailSb As StringBuilder
 		detailSb.Initialize
-		Dim word as String=result.Get("word")
+		Dim word As String=result.Get("word")
 		Dim rowid As String=result.Get("rowid")
 		Dim data As String=result.Get("highlight")
 		data=data.Replace(CRLF,"<br/>")
@@ -147,6 +157,67 @@ Public Sub loadResult(json As String)
 	If segments.Size>0 Then
 		loadPaginator
 	End If
+End Sub
+
+Sub loadCategories(json As String)
+	Log(json)
+	Dim columns As List
+	columns=BANano.FromJson(json)
+	Dim exclude As List
+	exclude.Initialize
+	exclude.AddAll(Array As String("word","content","raw"))
+	Dim newColumns As List
+	newColumns.Initialize
+	For i=0 To columns.Size - 1
+		If exclude.IndexOf(columns.Get(i))=-1 Then
+			newColumns.Add(columns.Get(i))
+		End If
+	Next
+	categoryNum=newColumns.Size
+	For i=0 To newColumns.Size - 1
+		Dim column As String=newColumns.Get(i)
+		Dim Ret As Long
+		Dim AllViews As Map
+		Ret = BANano.LoadLayoutArray("#categoryrow", "oneCategory", (i=0)) ' only clear the parent if it is the first layout that is loaded
+		Dim e As BANanoElement=BANano.GetElement("#disableradio_"&(i+1)&"chk")
+		e.SetAttr("name",column)
+		e.SetChecked(True)
+		Dim e As BANanoElement=BANano.GetElement("#posradio_"&(i+1)&"chk")
+		e.SetAttr("name",column)
+		Dim e As BANanoElement=BANano.GetElement("#negradio_"&(i+1)&"chk")
+		e.SetAttr("name",column)
+		Dim e As BANanoElement=BANano.GetElement("#neuradio_"&(i+1)&"chk")
+		e.SetAttr("name",column)
+		Dim e As BANanoElement=BANano.GetElement("#categorylabel_"&(i+1))
+		e.SetText(column)
+	Next
+End Sub
+
+Sub getCategoryParams As String
+	Dim sb As StringBuilder
+	sb.Initialize
+	For i=0 To categoryNum-1
+		Dim value As String
+		Dim disableRadio As BANanoElement=BANano.GetElement("#disableradio_"&(i+1)&"chk")
+		Dim posRadio As BANanoElement=BANano.GetElement("#posradio_"&(i+1)&"chk")
+		Dim negRadio As BANanoElement=BANano.GetElement("#negradio_"&(i+1)&"chk")
+		Dim neuRadio As BANanoElement=BANano.GetElement("#neuradio_"&(i+1)&"chk")
+		Dim categorylabel As BANanoElement=BANano.GetElement("#categorylabel_"&(i+1))
+		If disableRadio.GetChecked Then
+			Continue
+		End If
+		sb.Append("&").Append(categorylabel.GetText).Append("=")
+		If posRadio.GetChecked Then
+			sb.Append(posRadio.GetValue)
+		End If
+		If negRadio.GetChecked Then
+			sb.Append(negRadio.GetValue)
+		End If
+		If neuRadio.GetChecked Then
+			sb.Append(neuRadio.GetValue)
+		End If
+	Next
+	Return sb.ToString
 End Sub
 
 Sub loadPaginator
@@ -180,13 +251,9 @@ End Sub
 Sub DoSearch
 	Dim text As String=BANano.GetElement("#keyword").GetValue
 	Log(text)
-	If text="" Then
-		BANano.Alert("请输入关键词。")
-		Return
-	End If
 	Dim url As String
 	text=BANano.EncodeURI(text)
-	url=$"/get?id=${id}&page=${currentPageNum}&keyword=${text}"$
+	url=$"/get?id=${id}&page=${currentPageNum}&keyword=${text}${getCategoryParams}"$
 	Log("url"&url)
 	HTTPRequests.GetResults(url)
 End Sub
