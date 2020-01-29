@@ -120,12 +120,9 @@ Public Sub GetMatchedListAsync(text As String,page As Int,categories As Map) As 
 			words=getWordsForAll(text.ToLowerCase)
 		End If
 		text=getQuery(words,operator)
-		sqlStr="SELECT raw, word, rowid, quote(matchinfo(idx)) as rank FROM idx WHERE content MATCH '"&text&"' ORDER BY rank DESC LIMIT 15 OFFSET "&((page-1)*15)
+		sqlStr="SELECT raw, word, rowid, quote(matchinfo(idx)) as rank FROM idx WHERE idx MATCH 'content:"& text & buildCategorySQL(categories,True) &"' ORDER BY rank DESC LIMIT 15 OFFSET "&((page-1)*15)
 	Else
-		sqlStr="SELECT raw, word, rowid FROM idx"
-		If page>1 Then
-			return resultList
-		End If
+		sqlStr="SELECT raw, word, rowid, quote(matchinfo(idx)) as rank FROM idx WHERE idx MATCH '"& buildCategorySQL(categories,False) &"' ORDER BY rank DESC LIMIT 15 OFFSET "&((page-1)*15)
 	End If
 
 	
@@ -137,29 +134,35 @@ Public Sub GetMatchedListAsync(text As String,page As Int,categories As Map) As 
 		Dim result As Map
 		result.Initialize
 		Dim rowid As Int=rs.GetInt2(2)
-		If matchCategory(rowid,categories) Then
-			Dim Hightlight As String
+		Dim Hightlight As String
+		If text<>"" Then
 			Hightlight=getHightlight(Utils.cleanedEntry(rs.GetString2(0)),words)
-			Dim word As String=rs.GetString2(1)
-			result.Put("highlight",Hightlight)
-			result.Put("word",word)
-			result.Put("rowid",rowid)
-			resultList.Add(result)
 		End If
+		Dim word As String=rs.GetString2(1)
+		result.Put("highlight",Hightlight)
+		result.Put("word",word)
+		result.Put("rowid",rowid)
+		resultList.Add(result)
 	Loop
 	rs.Close
 	Return resultList
 End Sub
 
-Sub matchCategory(rowid As Int,categories As Map) As Boolean
-	For Each key As String In categories.keys
-		Dim columnValue As String=GetColumnByName(rowid,key)
-		Dim categoryValue As String=categories.Get(key)
-		If columnValue<>categoryValue Then
-			Return False
-		End If
+Sub buildCategorySQL(categories As Map,appendAND As Boolean) As String
+	Dim sb As StringBuilder
+	sb.Initialize
+
+	For Each key As String In categories.Keys
+		sb.Append(key)
+		sb.Append(":")
+		sb.Append(categories.Get(key))
+		sb.Append(" ")
 	Next
-	Return True
+	Dim sql As String=sb.ToString.Trim
+	If appendAND and sql<>"" Then
+		sql=" AND "&sql
+	End If
+	Return sql
 End Sub
 
 Sub getColumnsList As List

@@ -22,6 +22,6 @@ ModuleClosedNodes4=
 ModuleClosedNodes5=
 ModuleClosedNodes6=
 ModuleClosedNodes7=
-NavigationStack=Detail,Handle,11,0,DB,Put,18,0,DB,getColumns,31,0,GetColumnsHandler,Handle,17,0,Main,AppStart,31,2,Upload,Handle,52,0,GetMatchList,Handle,33,6,DB,GetColumnByName,98,6,DB,matchCategory,146,6,DB,GetMatchedListAsync,120,6
+NavigationStack=DB,Put,18,0,DB,getColumns,31,0,GetColumnsHandler,Handle,17,0,Upload,Handle,52,0,GetMatchList,Handle,33,6,DB,GetColumnByName,98,6,DB,GetMatchedListAsync,123,6,DB,buildCategorySQL,155,6,Main,AppStart,31,2
 SelectedBuild=0
 VisibleModules=1,2,3,4,5,6,7
