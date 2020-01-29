@@ -18,9 +18,10 @@ Module3=Utils
 Module4=GetMatchList
 Module5=Upload
 Module6=Detail
+Module7=GetColumnsHandler
 NumberOfFiles=1
 NumberOfLibraries=9
-NumberOfModules=6
+NumberOfModules=7
 Version=7.8
 @EndOfDesignText@
 'Non-UI application (console / server application)
@@ -54,6 +55,7 @@ Sub AppStart (Args() As String)
 	srvr.AddHandler("/get","GetMatchList",False)
 	srvr.AddHandler("/upload","Upload",False)
 	srvr.AddHandler("/detail","Detail",False)
+	srvr.AddHandler("/columns","GetColumnsHandler",False)
 	srvr.Port=port
 	srvr.Start
 	StartMessageLoop

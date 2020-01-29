@@ -30,12 +30,12 @@ Public Sub Put(heads As List, data As List)
 	sql1.TransactionSuccessful
 End Sub
 
-Sub getColumns(keys As List) As String
+Sub getColumns(Keys As List) As String
 	Dim sb As StringBuilder
 	sb.Initialize
-	For i=0 To keys.Size-1
-		sb.Append(keys.Get(i))
-		If i<>keys.Size-1 Then
+	For i=0 To Keys.Size-1
+		sb.Append(Keys.Get(i))
+		If i<>Keys.Size-1 Then
 			sb.Append(", ")
 		End If
 	Next
@@ -105,24 +105,34 @@ End Sub
 
 Public Sub GetMatchedListAsync(text As String,page As Int,categories As Map) As List
 	'Dim maxLength As Int=text.Length*2
+	Log(categories)
+	Dim resultList As List
+	resultList.Initialize
 	Dim sqlStr As String
 	Dim operator As String
 	Dim words As List
 	words.Initialize
 	operator="AND"
-	If text.StartsWith($"""$) And text.EndsWith($"""$) Then
-		words.Add(text.ToLowerCase)
+	If text<>"" Then
+		If text.StartsWith($"""$) And text.EndsWith($"""$) Then
+			words.Add(text.ToLowerCase)
+		Else
+			words=getWordsForAll(text.ToLowerCase)
+		End If
+		text=getQuery(words,operator)
+		sqlStr="SELECT raw, word, rowid, quote(matchinfo(idx)) as rank FROM idx WHERE content MATCH '"&text&"' ORDER BY rank DESC LIMIT 15 OFFSET "&((page-1)*15)
 	Else
-		words=getWordsForAll(text.ToLowerCase)
+		sqlStr="SELECT raw, word, rowid FROM idx"
+		If page>1 Then
+			return resultList
+		End If
 	End If
-	text=getQuery(words,operator)
+
 	
-	sqlStr="SELECT raw, word, rowid, quote(matchinfo(idx)) as rank FROM idx WHERE content MATCH '"&text&"' ORDER BY rank DESC LIMIT 15 OFFSET "&((page-1)*15)
 	Log(sqlStr)
 	Dim rs As ResultSet = sql1.ExecQuery2(sqlStr, Null)
 
-	Dim resultList As List
-	resultList.Initialize
+
 	Do While rs.NextRow
 		Dim result As Map
 		result.Initialize
@@ -143,12 +153,25 @@ End Sub
 
 Sub matchCategory(rowid As Int,categories As Map) As Boolean
 	For Each key As String In categories.keys
-		If GetColumnByName(rowid,key)<>categories.Get(key) Then
+		Dim columnValue As String=GetColumnByName(rowid,key)
+		Dim categoryValue As String=categories.Get(key)
+		If columnValue<>categoryValue Then
 			Return False
 		End If
 	Next
 	Return True
 End Sub
+
+Sub getColumnsList As List
+	Dim rs As ResultSet = sql1.ExecQuery2("SELECT * FROM idx WHERE rowid = 1",Null)
+	Dim result As List
+	result.Initialize
+	For i=0 To rs.ColumnCount-1
+		result.Add(rs.GetColumnName(i))
+	Next
+	Return result
+End Sub
+
 
 Sub getHightlight(text As String,words As List) As String
 	If words.Size=1 Then
