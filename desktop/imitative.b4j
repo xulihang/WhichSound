@@ -266,9 +266,7 @@ End Sub
 Sub infer(positive As String,negative As String,explainations As List) As String
 	Dim score As Int=0
 	For Each content As String In explainations
-		If content.Contains("	") Then
-			content=Regex.Split("	",content)(0)
-		End If
+		content=content.Replace("	"," ")
 		content=content.ToLowerCase
 		content=getStringForIndex(content)
 		Dim map1 As Map

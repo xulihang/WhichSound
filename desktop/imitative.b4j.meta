@@ -10,6 +10,6 @@ ModuleClosedNodes0=
 ModuleClosedNodes1=
 ModuleClosedNodes2=
 ModuleClosedNodes3=
-NavigationStack=Main,cleanedEntry,85,1,Main,cleanedEntries,97,0,Main,Button1_MouseClicked,128,6,Main,Button3_MouseClicked,152,6,Main,insertHeads,217,0,Main,Button4_MouseClicked,200,6,Main,insertResults,223,6,Main,dictToJson,49,0,Main,getElements,71,6,Main,infer,244,6
+NavigationStack=Main,cleanedEntries,97,0,Main,Button1_MouseClicked,128,6,Main,Button3_MouseClicked,152,6,Main,insertHeads,217,0,Main,Button4_MouseClicked,200,6,Main,insertResults,223,6,Main,dictToJson,49,0,Main,getElements,71,6,Visual Designer,main.bjl,-100,1,Main,infer,242,6
 SelectedBuild=0
 VisibleModules=1,2,3
