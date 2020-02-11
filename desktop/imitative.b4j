@@ -14,11 +14,13 @@ Library4=jrandomaccessfile
 Library5=javaobject
 Library6=jstringutils
 Library7=jpoi
+Library8=json
+Library9=jsoup
 Module1=LanguageUtils
 Module2=DB
 Module3=Utils
 NumberOfFiles=3
-NumberOfLibraries=7
+NumberOfLibraries=9
 NumberOfModules=3
 Version=7.8
 @EndOfDesignText@
@@ -51,9 +53,61 @@ Sub Application_Error (Error As Exception, StackTrace As String) As Boolean
 End Sub
 
 Sub Button2_MouseClicked (EventData As MouseEvent)
-	Dim entries As List=cleanedEntries
-	File.WriteList(File.DirApp,"clean.txt",entries)
-	imitatives.AddAll(entries)
+	dictToJson
+	'Dim entries As List=cleanedEntries
+	'File.WriteList(File.DirApp,"clean.txt",entries)
+	'imitatives.AddAll(entries)
+End Sub
+
+Sub dictToJson
+	Dim dict As Map
+	dict.Initialize
+	For Each entry As String In File.ReadList(File.DirApp,"imitatives.txt")
+		Dim entryMap As Map
+		entryMap.Initialize
+		Dim word As String=Regex.Split("\t",entry)(0)
+		Dim content As String=Regex.Split("\t",entry)(1)
+		Dim explainations As List
+		explainations.Initialize
+		Dim examples As List
+		examples.Initialize
+		Dim explainations As List
+		Dim sentences As List
+		explainations=getElements(content,"JX|GZ")
+		sentences=getElements(content,"LY|LS")
+		entryMap.Put("explainations",explainations)
+		entryMap.Put("sentences",sentences)
+		dict.Put(word,entryMap)
+	Next
+	Dim json As JSONGenerator
+	json.Initialize(dict)
+	File.WriteString(File.DirApp,"out.json",json.ToPrettyString(4))
+End Sub
+
+Sub getElements(content As String,pattern As String) As List
+	Dim result As List
+	result.Initialize
+	Dim soup As jSoup
+	Dim elements As List=soup.getElementsByAttributeValueMatching(content,"class",pattern)
+	Dim sb As StringBuilder
+	sb.Initialize
+	Dim num As Int=0
+	For Each element In elements
+		num=num+1
+		If num Mod 2=0 Then
+			sb.Append("	")
+			sb.Append(cleanedEntry(element))
+			result.Add(sb.ToString)
+			sb.Initialize
+		Else
+			sb.Append(cleanedEntry(element))
+		End If
+	Next
+	If sb.ToString.Trim<>"" Then
+		result.Add(sb.ToString)
+	End If
+	
+	Return result
 End Sub
 
 Sub cleanedEntry(entry As String) As String
@@ -67,7 +121,7 @@ Sub cleanedEntry(entry As String) As String
 		entry=Regex.Replace(CRLF&CRLF,entry,CRLF)
 		matcher=Regex.Matcher(CRLF&CRLF,entry)
 	Loop
-	Return entry
+	Return entry.Trim
 End Sub
 
 Sub cleanedEntries As List
@@ -87,14 +141,17 @@ Sub Button1_MouseClicked (EventData As MouseEvent)
 	entries=File.ReadList(File.DirApp,"out.txt")
 	Dim newList As List
 	newList.Initialize
+	Dim knownWords As Map=readKnownWords
 	For Each entry As String In entries
 		If entry.Contains("语源") Then
 			
 			Try
+				Dim word As String
+				word=Regex.Split("\t",entry)(0).Trim
 				Dim splited As String
 				splited=entry.Replace($"<span class="section_title">语源</span>"$,CRLF)
 				Dim etymology As String = Regex.Split(CRLF,splited)(1)
-				If etymology.Contains("imitative") Then
+				If etymology.Contains("imitative") Or knownWords.ContainsKey(word) Then
 					newList.Add(entry)
 				End If
 			Catch
@@ -107,7 +164,10 @@ Sub Button1_MouseClicked (EventData As MouseEvent)
 End Sub
 
 Sub Button3_MouseClicked (EventData As MouseEvent)
-    Dim wb As PoiWorkbook
+	Dim json As JSONParser
+	json.Initialize(File.ReadString(File.DirApp,"out.json"))
+	Dim dict As Map=json.NextObject
+	Dim wb As PoiWorkbook
 	wb.InitializeNew(True)
 	Dim sheet1 As PoiSheet = wb.AddSheet("Sheet1",0)
 	Dim entries As List
@@ -115,13 +175,22 @@ Sub Button3_MouseClicked (EventData As MouseEvent)
 	Dim row As PoiRow = sheet1.CreateRow(0)
 	row.CreateCellString(0,"word")
 	row.CreateCellString(1,"raw")
+	row.CreateCellString(2,"json")
 	For Each entry As String In entries
-		Dim word,content As String
-		word=Regex.Split("\t",entry)(0).Trim
-		content=Regex.Split("\t",entry)(1).Trim
-		Dim row As PoiRow = sheet1.CreateRow(sheet1.LastRowNumber+1)
-		row.CreateCellString(0,word)
-		row.CreateCellString(1,content)
+		Try
+			Dim word,content As String
+			word=Regex.Split("\t",entry)(0).Trim
+			content=Regex.Split("\t",entry)(1).Trim
+			Dim entryMap As Map=dict.Get(word)
+			Dim jsonG As JSONGenerator
+			jsonG.Initialize(entryMap)
+			Dim row As PoiRow = sheet1.CreateRow(sheet1.LastRowNumber+1)
+			row.CreateCellString(0,word)
+			row.CreateCellString(1,content)
+			row.CreateCellString(2,jsonG.ToPrettyString(4))
+		Catch
+			Log(LastException)
+		End Try
 	Next
 	wb.Save(File.DirApp,"out.xlsx")
 End Sub
@@ -156,12 +225,13 @@ Sub Button4_MouseClicked (EventData As MouseEvent)
 	For Each r As List In data
 		Dim cleaned As String=cleanedEntry(r.Get(1))
 		Dim splited As String=getStringForIndex(cleaned)
+		Dim jsonString As String=r.Get(2)
 		Dim newRow As List
 		newRow.Initialize
 		newRow.Add(r.Get(0))
 		newRow.Add(splited)
 		newRow.Add(r.Get(1))
-		insertResults(newRow,splited)
+		insertResults(newRow,jsonString)
 		Dim row As PoiRow = sheet1.CreateRow(sheet1.LastRowNumber+1)
 		For i=0 To newRow.Size-1
 			row.CreateCellString(i,newRow.Get(i))
@@ -178,44 +248,55 @@ Sub insertHeads(heads As List)
 	Next
 End Sub
 
-Sub insertResults(r As List,content As String)
+Sub insertResults(r As List,jsonString As String)
+	'Log(jsonString)
+	Dim json As JSONParser
+	json.Initialize(jsonString)
+	Dim map1 As Map=json.NextObject
+	Dim explainations As List
+	explainations=map1.Get("explainations")
 	For Each pane As Pane In ListView1.Items
 		Dim ta2,ta3 As TextArea
 		ta2=pane.GetNode(1)
 		ta3=pane.GetNode(2)
-		r.InsertAt(r.Size-2,infer(ta2.Text,ta3.Text,content.ToLowerCase))
+		r.InsertAt(r.Size-2,infer(ta2.Text,ta3.Text,explainations))
 	Next
 End Sub
 
-Sub infer(positive As String,negative As String,content As String) As String
+Sub infer(positive As String,negative As String,explainations As List) As String
 	Dim score As Int=0
-	Dim map1 As Map
-	map1.Initialize
-	For Each key As String In Regex.Split(" ",content)
-		If key.Trim="" Then
-			Continue
-		End If
-		key=porterStem(key)
-		map1.Put(key,"")
+	For Each content As String In explainations
+		content=content.ToLowerCase
+		content=getStringForIndex(content)
+		Dim map1 As Map
+		map1.Initialize
+		For Each key As String In Regex.Split(" ",content)
+			If key.Trim="" Then
+				Continue
+			End If
+			key=porterStem(key)
+			map1.Put(key,"")
+		Next
+		For Each word As String In Regex.Split(",",positive)
+			If word.Trim="" Then
+				Continue
+			End If
+			word=porterStem(word)
+			If map1.ContainsKey(word)  Then
+				score=score+1
+			End If
+		Next
+		For Each word As String In Regex.Split(",",negative)
+			If word.Trim="" Then
+				Continue
+			End If
+			word=porterStem(word)
+			If map1.ContainsKey(word) Then
+				score=score-1
+			End If
+		Next
 	Next
-	For Each word As String In Regex.Split(",",positive)
-		If word.Trim="" Then
-			Continue
-		End If
-		word=porterStem(word)
-		If map1.ContainsKey(word)  Then
-			score=score+1
-		End If
-	Next
-	For Each word As String In Regex.Split(",",negative)
-		If word.Trim="" Then
-			Continue
-		End If
-		word=porterStem(word)
-		If map1.ContainsKey(word) Then
-			score=score-1
-		End If
-	Next
+	
 	If score>0 Then
 		Return "POSITIVE"
 	else if score<0 Then
@@ -290,4 +371,16 @@ Sub porterStem(word As String) As String
 	jo.RunMethod("setCurrent",Array(word))
 	jo.RunMethod("stem",Null)
 	Return jo.RunMethod("getCurrent",Null)
+End Sub
+
+Sub readKnownWords As Map
+	Dim words As Map
+	words.Initialize
+	Dim wb As PoiWorkbook
+	wb.InitializeExisting(File.DirApp,"known.xlsx","")
+	Dim sheet1 As PoiSheet = wb.GetSheet(0)
+	For Each row As PoiRow In sheet1.Rows
+		words.Put(row.GetCell(0).ValueString,"")
+	Next
+	Return words
 End Sub

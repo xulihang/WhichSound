@@ -10,6 +10,6 @@ ModuleClosedNodes0=
 ModuleClosedNodes1=
 ModuleClosedNodes2=
 ModuleClosedNodes3=
-NavigationStack=Main,Process_Globals,12,4,Visual Designer,ta.bjl,-100,6,Main,Button5_MouseClicked,181,6,Main,insertHeads,149,6,Main,insertResults,160,6,Main,Button4_MouseClicked,138,6,Main,AppStart,20,6,Main,exportToSQLite,258,0,Main,porterStem,259,5,Main,infer,185,6
+NavigationStack=Main,cleanedEntry,85,1,Main,cleanedEntries,97,0,Main,Button1_MouseClicked,128,6,Main,Button3_MouseClicked,152,6,Main,insertHeads,217,0,Main,Button4_MouseClicked,200,6,Main,insertResults,223,6,Main,infer,239,6,Main,dictToJson,49,0,Main,getElements,71,6
 SelectedBuild=0
 VisibleModules=1,2,3
