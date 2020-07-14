@@ -385,3 +385,45 @@ Sub readKnownWords As Map
 	Next
 	Return words
 End Sub
+
+Sub Button6_MouseClicked (EventData As MouseEvent)
+	Dim json As JSONParser
+	json.Initialize(File.ReadString(File.DirApp,"moby_thesaurus.txt"))
+	Dim dict As Map
+	dict=json.NextObject
+	For Each pane As Pane In ListView1.Items
+		Dim ta2,ta3 As TextArea
+		ta2=pane.GetNode(1)
+		ta3=pane.GetNode(2)
+		Dim PositiveWords,NegativeWords As String
+		PositiveWords=ta2.Text
+		NegativeWords=ta3.Text
+		ta2.Text=synonymsString(PositiveWords,dict)
+		ta3.Text=synonymsString(NegativeWords,dict)
+	Next
+End Sub
+
+Sub synonymsString(words As String,dict As Map) As String
+	Dim wordsMap As Map
+	wordsMap.Initialize
+	For Each word As String In Regex.Split(",",words)
+		wordsMap.Put(word,"")
+		If dict.ContainsKey(word) Then
+			Dim synonyms As List=dict.Get(word)
+			For Each synonym As String In synonyms
+				wordsMap.Put(synonym,"")
+			Next
+		End If
+	Next
+	Dim sb As StringBuilder
+	sb.Initialize
+	Dim index As Int=0
+	For Each word As String In wordsMap.Keys
+		sb.Append(word)
+		If index<wordsMap.Size-1 Then
+			sb.Append(",")
+		End If
+		index=index+1
+	Next
+	Return sb.ToString
+End Sub
